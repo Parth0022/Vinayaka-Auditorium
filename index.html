@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vinayaka Auditorium - Your Premier Event Destination</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        html {
+             scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Hide body initially for preloader */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Class to show body once loaded */
+        body.loaded {
+            opacity: 1;
+        }
+
+        /* --- Preloader Styles --- */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff; /* White background */
+            z-index: 9999; /* Ensure it's on top */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+        #preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1); /* Light grey border */
+            border-left-color: #3b82f6; /* Blue color */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Ensure map iframe takes full height */
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            border:0;
+        }
+        /* Bento Grid specific styles */
+        .bento-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+        .bento-item-large { grid-column: span 1; grid-row: span 1; }
+        @media (min-width: 768px) { .bento-item-large { grid-column: span 2; grid-row: span 2; } }
+        .bento-item { background-color: #f9fafb; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; flex-direction: column; }
+        .bento-item:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+        .bento-item img { width: 100%; height: 180px; object-fit: cover; }
+        .bento-item-large img { height: 300px; }
+         @media (min-width: 768px) { .bento-item-large img { height: 100%; } .bento-item-large { flex-direction: row; } .bento-item-large img { width: 50%; height: auto; } .bento-item-large .bento-content { width: 50%; display: flex; flex-direction: column; justify-content: center; } }
+        .bento-content { padding: 1rem; flex-grow: 1; display: flex; flex-direction: column; }
+        .bento-content p:last-child { margin-top: auto; }
+
+        /* Mobile menu transition */
+        #mobile-menu { transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
+        #mobile-menu.hidden { transform: translateY(-10px); opacity: 0; pointer-events: none; }
+        #mobile-menu.block { transform: translateY(0); opacity: 1; pointer-events: auto; }
+
+        /* --- Infinite Testimonial Carousel Styles --- */
+        .testimonial-carousel-container { width: 100%; overflow: hidden; position: relative; -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%); }
+        .testimonial-track { display: flex; width: calc(350px * 10); animation: scroll 40s linear infinite; }
+        .testimonial-card { width: 350px; flex-shrink: 0; margin-right: 1.5rem; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); display: flex; flex-direction: column; height: auto; min-height: 200px; transition: background-color 0.3s ease; }
+        .testimonial-card .quote { flex-grow: 1; margin-bottom: 1rem; font-style: italic; }
+        .testimonial-card .author { font-weight: 600; margin-top: auto; text-align: right; }
+        .testimonial-carousel-container:hover .testimonial-track { animation-play-state: paused; }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(calc(-350px * 5 - 1.5rem * 5)); } }
+
+        /* --- Gallery Redesign (Masonry + Lightbox) --- */
+        .masonry-gallery {
+            column-count: 2;
+            column-gap: 1rem; /* Adjust gap */
+        }
+        @media (min-width: 768px) { .masonry-gallery { column-count: 3; } }
+        @media (min-width: 1024px) { .masonry-gallery { column-count: 4; } }
+
+        .masonry-item {
+            display: inline-block; /* Important for column layout */
+            width: 100%;
+            margin-bottom: 1rem; /* Space below items */
+            break-inside: avoid; /* Prevent items breaking across columns */
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+            cursor: pointer; /* Indicate clickable */
+        }
+        .masonry-item img {
+            display: block; /* Remove extra space below image */
+            width: 100%;
+            height: auto; /* Allow image to determine height */
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+        .masonry-item:hover img {
+            transform: scale(1.03); /* Subtle zoom */
+            filter: brightness(0.85);
+        }
+        .masonry-item::after { /* Overlay effect */
+            content: '\f00e'; /* Font Awesome search icon */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            color: white; font-size: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+        .masonry-item:hover::after {
+            opacity: 0.8;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* --- Simple Lightbox Styles --- */
+        #lightbox {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* Dark overlay */
+            z-index: 10000; /* Above everything */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            cursor: pointer; /* Click anywhere to close */
+        }
+        #lightbox.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        #lightbox img {
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 0.25rem; /* Optional: rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            cursor: default; /* Prevent inner image click closing */
+        }
+        /* Close button for lightbox */
+        #lightbox-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            color: #fff;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            line-height: 1;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+        #lightbox-close:hover {
+            opacity: 1;
+        }
+
+
+        /* --- Button Hover Enhancement --- */
+        .cta-button { transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease; }
+        .cta-button:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+
+        /* --- AOS Animation Customization --- */
+        [data-aos="fade-up"] { transition-property: transform, opacity; }
+
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800"> 
+    <!-- {/* Body hidden initially */} -->
+
+    <div id="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="lightbox" onclick="closeLightbox()">
+        <button id="lightbox-close" aria-label="Close image viewer" onclick="closeLightbox(event)">&times;</button>
+        <img id="lightbox-img" src="" alt="Enlarged event image">
+    </div>
+
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-6">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <a href="#" class="text-2xl font-bold text-blue-600 hover:text-blue-700 transition duration-300">Vinayaka Auditorium</a>
+                </div>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="#about" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-300">About</a>
+                    <a href="#venues" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-300">Venues</a>
+                    <a href="#services" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-300">Services</a>
+                    <a href="#gallery" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-300">Gallery</a>
+                    <a href="#contact" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-300">Contact</a>
+                    <a href="#contact" class="cta-button ml-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Book Now
+                    </a>
+                </div>
+                <div class="md:hidden flex items-center">
+                    <button id="menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <i id="menu-icon-open" class="fas fa-bars h-6 w-6 block"></i>
+                        <i id="menu-icon-close" class="fas fa-times h-6 w-6 hidden"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden absolute top-16 left-0 w-full bg-white shadow-lg py-2 z-40">
+            <a href="#about" class="block text-gray-600 hover:bg-gray-100 hover:text-blue-600 px-4 py-3 text-base font-medium transition duration-300">About</a>
+            <a href="#venues" class="block text-gray-600 hover:bg-gray-100 hover:text-blue-600 px-4 py-3 text-base font-medium transition duration-300">Venues</a>
+            <a href="#services" class="block text-gray-600 hover:bg-gray-100 hover:text-blue-600 px-4 py-3 text-base font-medium transition duration-300">Services</a>
+            <a href="#gallery" class="block text-gray-600 hover:bg-gray-100 hover:text-blue-600 px-4 py-3 text-base font-medium transition duration-300">Gallery</a>
+            <a href="#contact" class="block text-gray-600 hover:bg-gray-100 hover:text-blue-600 px-4 py-3 text-base font-medium transition duration-300">Contact</a>
+            <a href="#contact" class="block w-full text-left bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-3 text-base font-medium transition duration-300 mt-2">
+                Book Now
+            </a>
+        </div>
+    </nav>
+
+    <section id="hero" class="relative h-[60vh] md:h-[80vh] bg-cover bg-center flex items-center justify-center text-white" style="background-image: url('Files/VinayaExterior.jpg');">
+        <div class="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/40 to-transparent"></div>
+        <div class="relative z-10 text-center px-4" data-aos="fade-in" data-aos-delay="300">
+            <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Vinayaka Auditorium</h1>
+            <p class="text-xl md:text-2xl font-light drop-shadow-md">Where Great Events Happen</p>
+            <a href="#contact" class="cta-button mt-8 inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg">Book Your Event</a>
+        </div>
+    </section>
+
+    <section id="about" class="py-16 md:py-24 bg-white">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-6" data-aos="fade-up">About Us</h2>
+            <p class="max-w-3xl mx-auto text-lg text-gray-600 mb-12" data-aos="fade-up" data-aos-delay="100">
+                Welcome to the Vinayaka Auditorium, the region's premier destination for conferences, exhibitions, and special events. Our mission is to provide a state-of-the-art facility with exceptional service, ensuring every event is a success.
+            </p>
+            <div class="grid md:grid-cols-3 gap-8 text-left">
+                <div class="bg-gray-100 p-6 rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300" data-aos="fade-up" data-aos-delay="200">
+                    <h3 class="text-xl font-semibold mb-3 text-blue-600">Versatile Spaces</h3>
+                    <p class="text-gray-600">From Grand Marriages to expansive exhibition halls, we offer flexible spaces adaptable to any event size and type.</p>
+                </div>
+                <div class="bg-gray-100 p-6 rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300" data-aos="fade-up" data-aos-delay="300">
+                    <h3 class="text-xl font-semibold mb-3 text-blue-600">Cutting-Edge Tech</h3>
+                    <p class="text-gray-600">Equipped with the latest audiovisual technology and CCTV ensures safety and real-time monitoring, making it ideal for secure events, performances, and gatherings.</p>
+                </div>
+                <div class="bg-gray-100 p-6 rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300" data-aos="fade-up" data-aos-delay="400">
+                    <h3 class="text-xl font-semibold mb-3 text-blue-600">Air Conditioned</h3>
+                    <p class="text-gray-600">An air-conditioned auditorium in a contemporary space with climate control to guarantee that visitors are comfortable during meetings, conferences, exhibits, or get-togethers.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="venues" class="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-10 text-center" data-aos="fade-up">Our Venues</h2>
+            <div class="bento-grid">
+                <div class="bento-item" data-aos="fade-up"> <img src="Files/3.jpg" alt="Main Hall"> <div class="bento-content"> <h3 class="text-xl font-semibold mb-2 text-blue-600">Main Hall</h3> <p class="text-sm text-gray-600 mb-2">Capacity: 1000 | Features: Stage, AV, Air conditioned</p> <p class="text-gray-700">Perfect for galas, large conferences, and weddings. Offers stunning decor and flexibility.</p> </div> </div>
+                <div class="bento-item" data-aos="fade-up" data-aos-delay="100"> <img src="Files/Dinning.jpg" alt="Dinning Hall"> <div class="bento-content"> <h3 class="text-xl font-semibold mb-2 text-blue-600">Dinning Hall</h3> <p class="text-sm text-gray-600 mb-2">Capacity: 500 | Features: High Ceilings, Clean Washing Area</p> <p class="text-gray-700">Ideal for Sadhyas and Evening Food Lounge.</p> </div> </div>
+                <div class="bento-item" data-aos="fade-up" data-aos-delay="200"> <img src="Files/Outside.jpg" alt="Parking"> <div class="bento-content"> <h3 class="text-xl font-semibold mb-2 text-blue-600">Parking Area</h3> <p class="text-sm text-gray-600 mb-2">Capacity: 120 | Features: Wide area for seperate Car and Bike Parking</p> <p class="text-gray-700"></p> </div> </div>
+                
+                
+            </div>
+        </div>
+    </section>
+
+    <section id="amenities" class="py-16 md:py-24 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12 text-center" data-aos="fade-up">Amenities</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center p-6 border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300" data-aos="fade-up" data-aos-delay="100"> <i class="fas fa-utensils text-4xl text-blue-600 mb-4"></i> <h3 class="text-xl font-semibold mb-2">In-House Catering</h3> <p class="text-gray-600">Delicious and customizable menus for any occasion.</p> </div>
+                <div class="text-center p-6 border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300" data-aos="fade-up" data-aos-delay="200"> <i class="fas fa-video text-4xl text-blue-600 mb-4"></i> <h3 class="text-xl font-semibold mb-2">Advanced AV Equipment</h3> <p class="text-gray-600">State-of-the-art sound systems, projectors, and support.</p> </div>
+                <div class="text-center p-6 border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300" data-aos="fade-up" data-aos-delay="300"> <i class="fas fa-shield-alt text-4xl text-blue-600 mb-4"></i> <h3 class="text-xl font-semibold mb-2">Safety</h3> <p class="text-gray-600">Industry recommended fire hazard safety equipments</p> </div>
+                <div class="text-center p-6 border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300" data-aos="fade-up" data-aos-delay="400"> <i class="fas fa-wheelchair text-4xl text-blue-600 mb-4"></i> <h3 class="text-xl font-semibold mb-2">Accessibility Features</h3> <p class="text-gray-600">Fully accessible facility with ramps and elevators.</p> </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="py-16 md:py-24 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12 text-center" data-aos="fade-up">Our Services</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="100"> <i class="fas fa-clipboard-list text-3xl text-blue-600 mb-3"></i> <h3 class="text-xl font-semibold mb-2">Event Planning</h3> <p class="text-gray-600">Dedicated coordinators to manage every detail.</p> </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="200"> <i class="fas fa-cogs text-3xl text-blue-600 mb-3"></i> <h3 class="text-xl font-semibold mb-2">Setup & Teardown</h3> <p class="text-gray-600">Professional crew for configuration and cleanup.</p> </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="300"> <i class="fas fa-shield-alt text-3xl text-blue-600 mb-3"></i> <h3 class="text-xl font-semibold mb-2">Security Services</h3> <p class="text-gray-600">Experienced personnel for safety and flow.</p> </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="100"> <i class="fas fa-concierge-bell text-3xl text-blue-600 mb-3"></i> <h3 class="text-xl font-semibold mb-2">Concierge</h3> <p class="text-gray-600">Assistance with accommodations and transport.</p> </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="200"> <i class="fas fa-microphone-alt text-3xl text-blue-600 mb-3"></i> <h3 class="text-xl font-semibold mb-2">Technical Support</h3> <p class="text-gray-600">On-site technicians for AV and troubleshooting.</p> </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="300"> <i class="fas fa-parking text-3xl text-blue-600 mb-3"></i> <h3 class="text-xl font-semibold mb-2">Parking & Valet</h3> <p class="text-gray-600">Ample parking for seperate Cars, Bikes and Van</p> </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="testimonials" class="py-16 md:py-24 bg-gradient-to-b from-blue-50 to-white overflow-hidden">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12 text-center" data-aos="fade-up">What Our Clients Say</h2>
+            <div class="testimonial-carousel-container" data-aos="fade-up" data-aos-delay="100">
+                <div class="testimonial-track">
+                    <!-- {/* Cards remain the same */} -->
+                    <div class="testimonial-card bg-white text-gray-700 border-l-4 border-blue-500"> <p class="quote">"The team was incredible! Flawless execution for our annual conference. Stunning venue, top-notch service."</p> <p class="author">- Jane D., CEO, TechCorp</p> </div>
+                    <div class="testimonial-card bg-blue-800 text-white"> <i class="fas fa-quote-left text-blue-300 text-2xl mb-3"></i> <p class="quote">"Hosted our gala here and were blown away. Magnificent ballroom, delicious catering, and staff went above and beyond."</p> <p class="author">- John S., Event Mgr, Global Inc.</p> </div>
+                    <div class="testimonial-card bg-gray-100 text-gray-800"> <p class="quote">"Fantastic venue for our trade show. Ample space in the exhibition hall and excellent logistics support. Highly recommended!"</p> <p class="author">- Sarah L., Marketing Dir, Innovate Solutions</p> </div>
+                    <div class="testimonial-card bg-white text-gray-700 border-l-4 border-green-500"> <i class="fas fa-star text-yellow-400 mr-1"></i><i class="fas fa-star text-yellow-400 mr-1"></i><i class="fas fa-star text-yellow-400 mr-1"></i><i class="fas fa-star text-yellow-400 mr-1"></i><i class="fas fa-star text-yellow-400 mb-3"></i> <p class="quote">"Accessibility was crucial for our event, and this center delivered. Easy navigation and helpful staff."</p> <p class="author">- Michael B., Conference Organizer</p> </div>
+                    <div class="testimonial-card bg-blue-100 text-blue-900"> <p class="quote">"The technical support team was outstanding. Our presentations ran smoothly thanks to their expertise and equipment."</p> <p class="author">- Emily R., Tech Summit Lead</p> </div>
+                    <!-- {/* Duplicate Cards */} -->
+                    <div class="testimonial-card bg-white text-gray-700 border-l-4 border-blue-500"> <p class="quote">"The team was incredible! Flawless execution for our annual conference. Stunning venue, top-notch service."</p> <p class="author">- Jane D., CEO, TechCorp</p> </div>
+                    <div class="testimonial-card bg-blue-800 text-white"> <i class="fas fa-quote-left text-blue-300 text-2xl mb-3"></i> <p class="quote">"Hosted our gala here and were blown away. Magnificent ballroom, delicious catering, and staff went above and beyond."</p> <p class="author">- John S., Event Mgr, Global Inc.</p> </div>
+                    <div class="testimonial-card bg-gray-100 text-gray-800"> <p class="quote">"Fantastic venue for our trade show. Ample space in the exhibition hall and excellent logistics support. Highly recommended!"</p> <p class="author">- Sarah L., Marketing Dir, Innovate Solutions</p> </div>
+                    <div class="testimonial-card bg-white text-gray-700 border-l-4 border-green-500"> <i class="fas fa-star text-yellow-400 mr-1"></i><i class="fas fa-star text-yellow-400 mr-1"></i><i class="fas fa-star text-yellow-400 mr-1"></i><i class="fas fa-star text-yellow-400 mr-1"></i><i class="fas fa-star text-yellow-400 mb-3"></i> <p class="quote">"Accessibility was crucial for our event, and this center delivered. Easy navigation and helpful staff."</p> <p class="author">- Michael B., Conference Organizer</p> </div>
+                    <div class="testimonial-card bg-blue-100 text-blue-900"> <p class="quote">"The technical support team was outstanding. Our presentations ran smoothly thanks to their expertise and equipment."</p> <p class="author">- Emily R., Tech Summit Lead</p> </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="gallery" class="py-16 md:py-24 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12 text-center" data-aos="fade-up">Event Gallery</h2>
+            <div class="masonry-gallery">
+                <!-- {/* Add more images as needed, ensure unique alt text */} -->
+                <div class="masonry-item" data-aos="zoom-in" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="Files/IMG-20250421-WA0006.jpg" alt="Gala Dinner Setup">
+                </div>
+                 <div class="masonry-item" data-aos="zoom-in" data-aos-delay="100" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="Files/IMG-20250421-WA0007.jpg" alt="Conference Stage View">
+                </div>
+                 <div class="masonry-item" data-aos="zoom-in" data-aos-delay="200" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="Files/IMG-20250421-WA0010.jpg" alt="Trade Show Booths">
+                </div>
+                 <div class="masonry-item" data-aos="zoom-in" data-aos-delay="50" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="Files/1.jpg" alt="Wedding Reception Hall">
+                </div>
+                 <div class="masonry-item" data-aos="zoom-in" data-aos-delay="150" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="Files/2.jpg" alt="Networking Event Crowd">
+                </div>
+                 <div class="masonry-item" data-aos="zoom-in" data-aos-delay="250" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="Files/3.jpg" alt="Product Launch Stage">
+                </div>
+                 <div class="masonry-item" data-aos="zoom-in" data-aos-delay="100" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="Files/Dinning.jpg" alt="Workshop Collaboration">
+                </div>
+                 <div class="masonry-item" data-aos="zoom-in" data-aos-delay="200" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="Files/Outside.jpg" alt="Outdoor Event Tent Setup">
+                </div>
+                 <div class="masonry-item" data-aos="zoom-in" data-aos-delay="150" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="https://placehold.co/400x480/a5b4fc/ffffff?text=Exhibition+Hall+View" alt="Exhibition Hall Overview">
+                </div>
+                 <div class="masonry-item" data-aos="zoom-in" data-aos-delay="250" onclick="openLightbox(this.querySelector('img').src, this.querySelector('img').alt)">
+                    <img src="https://placehold.co/400x520/d8b4fe/ffffff?text=Meeting+Room+Setup" alt="Meeting Room Setup">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="py-16 md:py-24 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-10 text-center" data-aos="fade-up">Get In Touch</h2>
+            <div class="flex flex-col md:flex-row bg-white rounded-lg shadow-xl overflow-hidden" data-aos="fade-up" data-aos-delay="100">
+                <!-- {/* Map Side */} -->
+                <div class="md:w-1/2 map-container"> <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3945.900000000000!2d76.90000000000000!3d8.50000000000000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zOMKwMzAnMDAuMCJOIDc2wrA1NCcwMC4wIkU!5e0!3m2!1sen!2sin!4v1678886400000!5m2!1sen!2sin" class="w-full h-full min-h-[400px] md:min-h-full" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe> </div>
+                <!-- {/* Form Side */} -->
+                <div class="md:w-1/2 p-8 md:p-12">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-6">Send Us a Message</h3>
+                    <form action="#" method="POST">
+                        <div class="mb-4"> <label for="name" class="block text-gray-700 font-medium mb-2">Name</label> <input type="text" id="name" name="name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"> </div>
+                        <div class="mb-4"> <label for="email" class="block text-gray-700 font-medium mb-2">Email</label> <input type="email" id="email" name="email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"> </div>
+                        <div class="mb-6"> <label for="phone" class="block text-gray-700 font-medium mb-2">Phone Number</label> <input type="tel" id="phone" name="phone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"> </div>
+                        <div class="mb-6"> <label for="message" class="block text-gray-700 font-medium mb-2">Message (Optional)</label> <textarea id="message" name="message" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300" placeholder="Tell us about your event..."></textarea> </div>
+                        <div> <button type="submit" class="cta-button w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md">Submit Inquiry</button> </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="direct-contact" class="py-16 md:py-24 bg-blue-50"> 
+        <!-- {/* Changed ID slightly */} -->
+        <div class="container mx-auto px-6" data-aos="fade-up">
+             <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12 text-center">Contact Us Directly</h2>
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- {/* Email Card */} -->
+                <a href="mailto:vinayakaauditorium@gmail.com" class="group block bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-blue-100 text-blue-600 rounded-full p-3 mr-4 group-hover:bg-blue-200 transition-colors duration-300">
+                             <i class="fas fa-envelope text-2xl w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Email Us</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Send us an email with your questions or requirements.</p>
+                    <span class="text-blue-600 font-medium group-hover:text-blue-800 transition-colors duration-300">vinayakaauditorium@gmail.com <i class="fas fa-arrow-right text-xs ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></i></span>
+                </a>
+                <!-- {/* Phone Card */} -->
+                <a href="tel:+919447388395" class="group block bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                     <div class="flex items-center mb-4">
+                        <div class="bg-green-100 text-green-600 rounded-full p-3 mr-4 group-hover:bg-green-200 transition-colors duration-300">
+                             <i class="fas fa-phone-alt text-2xl w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Call Us</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Speak directly with our team during business hours.</p>
+                    <span class="text-green-600 font-medium group-hover:text-green-800 transition-colors duration-300">+91 9447388395 <i class="fas fa-arrow-right text-xs ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></i></span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-6 text-center" data-aos="fade-up">
+            <h3 class="text-2xl font-semibold text-gray-800 mb-6">Follow Us</h3>
+            <div class="flex justify-center space-x-6">
+                <a href="#" aria-label="Facebook" class="text-gray-500 hover:text-blue-700 transition duration-300 transform hover:scale-110"> <i class="fab fa-facebook-f text-3xl"></i> </a>
+                <a href="#" aria-label="Twitter" class="text-gray-500 hover:text-blue-400 transition duration-300 transform hover:scale-110"> <i class="fab fa-twitter text-3xl"></i> </a>
+                <a href="#" aria-label="Instagram" class="text-gray-500 hover:text-pink-600 transition duration-300 transform hover:scale-110"> <i class="fab fa-instagram text-3xl"></i> </a>
+                <a href="#" aria-label="LinkedIn" class="text-gray-500 hover:text-blue-800 transition duration-300 transform hover:scale-110"> <i class="fab fa-linkedin-in text-3xl"></i> </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-gray-800 text-gray-300 py-12">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div> <h4 class="text-lg font-semibold text-white mb-3">Vinayaka Auditorium</h4> <p class="text-sm">Manappuram - Anappad Bund Rd, Malayinkeezh, Kerala 695571</p> <p class="text-sm mt-2">Providing premier event spaces and services.</p> </div>
+                <div> <h4 class="text-lg font-semibold text-white mb-3">Quick Links</h4> <ul> <li class="mb-1"><a href="#about" class="hover:text-white text-sm transition duration-300">About Us</a></li> <li class="mb-1"><a href="#venues" class="hover:text-white text-sm transition duration-300">Venues</a></li> <li class="mb-1"><a href="#services" class="hover:text-white text-sm transition duration-300">Services</a></li> <li class="mb-1"><a href="#contact" class="hover:text-white text-sm transition duration-300">Contact</a></li> <li class="mb-1"><a href="#" class="hover:text-white text-sm transition duration-300">Privacy Policy</a></li> </ul> </div>
+                <div> <h4 class="text-lg font-semibold text-white mb-3">Stay Updated</h4> <p class="text-sm mb-3">Sign up for news about upcoming events and offers.</p> <form action="#" method="POST" class="flex"> <input type="email" placeholder="Enter your email" class="flex-grow px-3 py-2 rounded-l-md text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"> <button type="submit" class="cta-button bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-md text-sm font-semibold">Subscribe</button> </form> </div>
+            </div>
+            <div class="border-t border-gray-700 pt-8 text-center text-sm"> <p>© <span id="currentYear"></span> Vinayaka Auditorium. All Rights Reserved.</p> </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+    <script>
+        // --- Preloader Logic ---
+        const preloader = document.getElementById('preloader');
+        const body = document.body;
+
+        window.addEventListener('load', () => {
+            // Wait a tiny bit after load if needed, then hide preloader
+            setTimeout(() => {
+                if (preloader) {
+                    preloader.classList.add('hidden');
+                }
+                body.classList.add('loaded'); // Show body content
+                 // Optional: Remove preloader from DOM after transition
+                // setTimeout(() => {
+                //     if (preloader) {
+                //         preloader.remove();
+                //     }
+                // }, 500); // Match CSS transition duration
+            }, 200); // Small delay (e.g., 200ms)
+        });
+
+        // --- Initialize AOS ---
+        AOS.init({
+            duration: 800,
+            once: false, // Set to false to animate on scroll up/down
+            offset: 100,
+            easing: 'ease-in-out',
+        });
+
+        // --- Navigation Menu Toggle ---
+        const menuButton = document.getElementById('menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const openIcon = document.getElementById('menu-icon-open');
+        const closeIcon = document.getElementById('menu-icon-close');
+
+        menuButton.addEventListener('click', () => {
+            const isExpanded = menuButton.getAttribute('aria-expanded') === 'true';
+            menuButton.setAttribute('aria-expanded', !isExpanded);
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('block');
+            openIcon.classList.toggle('hidden');
+            openIcon.classList.toggle('block');
+            closeIcon.classList.toggle('hidden');
+            closeIcon.classList.toggle('block');
+        });
+
+        // Close mobile menu when a link is clicked
+        const mobileLinks = mobileMenu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                 if (!mobileMenu.classList.contains('hidden')) {
+                    menuButton.click();
+                 }
+            });
+        });
+
+        // --- Lightbox Logic ---
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+
+        function openLightbox(imgSrc, imgAlt = 'Enlarged event image') {
+            if (lightbox && lightboxImg) {
+                lightboxImg.src = imgSrc;
+                lightboxImg.alt = imgAlt;
+                lightbox.classList.add('active');
+                body.style.overflow = 'hidden'; // Prevent background scrolling
+            }
+        }
+
+        function closeLightbox(event) {
+             // Close only if lightbox overlay itself or close button is clicked
+             // Prevent closing if the image inside is clicked
+            if (lightbox && (event === undefined || event.target === lightbox || event.target.id === 'lightbox-close')) {
+                 lightbox.classList.remove('active');
+                 body.style.overflow = ''; // Restore background scrolling
+                 // Optional: Clear image src after transition
+                 setTimeout(() => { lightboxImg.src = ''; }, 300); // Match CSS transition
+             }
+        }
+
+        // Optional: Close lightbox with Escape key
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && lightbox && lightbox.classList.contains('active')) {
+                closeLightbox();
+            }
+        });
+
+
+        // --- Footer: Update Copyright Year Dynamically ---
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // --- Refresh AOS on window resize ---
+        window.addEventListener('resize', () => {
+            AOS.refresh();
+        });
+
+    </script>
+
+</body>
+</html>
